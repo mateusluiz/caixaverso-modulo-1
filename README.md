@@ -81,28 +81,6 @@ Content-Type: application/json
 GET /transactions?startDate=2024-01-01&endDate=2024-01-31
 ```
 
-## Buscar por ID
-
-```json
-GET /transactions/{id}
-```
-
-## Atualizar Transação
-
-```json
-PUT /transactions/{id}
-Content-Type: application/json
-
-{
-  "amount": 200.00,
-  "description": "Compra atualizada"
-}
-```
-
-## Deletar Transação
-```json
-DELETE /transactions/{id}
-```
 
 ### 💾 Banco de Dados
 
