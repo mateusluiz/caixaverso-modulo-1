@@ -118,5 +118,5 @@ O projeto utiliza H2 Database em arquivo persistente:
 
 As migrações SQL estão em migration:
 
-V1__init.sql - Schema inicial
-V2__seed_dev.sql - Dados de desenvolvimento
+- V1__init.sql - Schema inicial
+- V2__seed_dev.sql - Dados de desenvolvimento
