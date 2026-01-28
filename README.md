@@ -1,78 +1,122 @@
-# finances-backend
+# 💰 Finances Backend
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Sistema de gerenciamento de finanças pessoais desenvolvido com Quarkus.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## 📋 Sobre o Projeto
 
-## Running the application in dev mode
+Aplicação backend para controle financeiro que permite:
 
-You can run your application in dev mode that enables live coding using:
+- ✅ Registrar receitas e despesas
+- 📊 Categorizar transações
+- 📅 Consultar transações por período
 
-```shell script
+## 🏗️ Arquitetura
+
+O projeto utiliza **Arquitetura Hexagonal (Ports and Adapters)**
+
+```
+📁 domain/          → Lógica de negócio
+   ├── model/       → Entidades de domínio
+   └── ports/       → Interfaces (contratos)
+
+📁 app/             → Casos de uso
+   ├── usecase/     → Regras
+   └── dto/         → Contratos de entrada/saída
+
+📁 infra/           → Implementações técnicas
+   └── persistence/ → JPA/Hibernate
+      ├── entity/   → Entidades do banco
+      ├── repository/ → Implementação das portas
+      └── mapper/   → Conversão domínio ↔ DB
+
+📁 api/             → Camada REST
+   └── resource/    → Endpoints HTTP
+```
+
+## 🚀 Tecnologias
+
+- **Java 17+**
+- **Quarkus 3.x** - Framework supersônico
+- **Hibernate/JPA** - ORM
+- **H2 Database** - Banco de dados em arquivo
+- **Flyway** - Migração de banco
+- **RESTEasy** - API REST
+
+- ## 📦 Pré-requisitos
+
+- **Java 17** ou superior
+- **Maven 3.8+** (ou use o wrapper `mvnw`)
+
+## ⚙️ Como Executar
+
+### 1️⃣ Modo Desenvolvimento (Hot Reload)
+
+```bash
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+A aplicação estará disponível em: http://localhost:8080
 
-## Packaging and running the application
+### 📚 API Endpoints
 
-The application can be packaged using:
+## Transações
 
-```shell script
-./mvnw package
+```json
+POST /transactions
+Content-Type: application/json
+
+{
+  "accountId": 1,
+  "categoryId": 1,
+  "type": "EXPENSE",
+  "amount": 150.00,
+  "description": "Compra supermercado",
+  "transactionDate": "2024-01-15"
+}
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+## Listar Transações
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
+```json
+GET /transactions?startDate=2024-01-01&endDate=2024-01-31
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+## Buscar por ID
 
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
+```json
+GET /transactions/{id}
 ```
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
+## Atualizar Transação
 
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
+```json
+PUT /transactions/{id}
+Content-Type: application/json
+
+{
+  "amount": 200.00,
+  "description": "Compra atualizada"
+}
 ```
 
-You can then execute your native executable with: `./target/finances-backend-1.0.0-SNAPSHOT-runner`
+## Deletar Transação
+```json
+DELETE /transactions/{id}
+```
 
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
+### 💾 Banco de Dados
 
-## Related Guides
+O projeto utiliza H2 Database em arquivo persistente:
 
-- Hibernate ORM ([guide](https://quarkus.io/guides/hibernate-orm)): Define your persistent model with Hibernate ORM and Jakarta Persistence
-- Hibernate Validator ([guide](https://quarkus.io/guides/validation)): Validate object properties (field, getter) and method parameters for your beans (REST, CDI, Jakarta Persistence)
-- Flyway ([guide](https://quarkus.io/guides/flyway)): Handle your database schema migrations
-- JDBC Driver - H2 ([guide](https://quarkus.io/guides/datasource)): Connect to the H2 database via JDBC
-- REST Jackson ([guide](https://quarkus.io/guides/rest#json-serialisation)): Jackson serialization support for Quarkus REST. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it
+- Arquivo: finances.mv.db
+- Console H2: http://localhost:8080/h2-console (em dev mode)
+- JDBC URL: jdbc:h2:file:./data/finances
+- Usuário: sa
+- Senha: (vazia)
 
-## Provided Code
+## Migrações Flyway
 
-### Hibernate ORM
+As migrações SQL estão em migration:
 
-Create your first JPA entity
-
-[Related guide section...](https://quarkus.io/guides/hibernate-orm)
-
-
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+V1__init.sql - Schema inicial
+V2__seed_dev.sql - Dados de desenvolvimento
