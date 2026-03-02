@@ -46,3 +46,9 @@ data/
 /.quarkus/cli/plugins/
 # TLS Certificates
 .certs/
+
+# Nginx runtime artifacts
+logs/nginx/*
+!logs/nginx/.gitkeep
+nginx/cache/*
+!nginx/cache/.gitkeep

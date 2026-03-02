@@ -1,20 +1,20 @@
-# 💰 Finances Backend
+# Finances Backend
 
-Sistema de gerenciamento de finanças pessoais desenvolvido com Quarkus.
+Sistema de gerenciamento de financas pessoais desenvolvido com Quarkus.
 
-## 📋 Sobre o Projeto
+## Sobre o Projeto
 
-Aplicação backend para controle financeiro que permite:
+Aplicacao backend para controle financeiro que permite:
 
-- ✅ Registrar receitas e despesas
-- 📊 Categorizar transações
-- 📅 Consultar transações por período
+- Registrar receitas e despesas
+- Categorizar transações
+- Consultar transações por periodo
 
-## 🏗️ Arquitetura
+## Arquitetura da Aplicacao (Hexagonal)
 
-O projeto utiliza **Arquitetura Hexagonal (Ports and Adapters)**
+O projeto utiliza Arquitetura Hexagonal (Ports and Adapters):
 
-```
+```text
 📁 domain/          → Lógica de negócio
    ├── model/       → Entidades de domínio
    └── ports/       → Interfaces (contratos)
@@ -33,68 +33,226 @@ O projeto utiliza **Arquitetura Hexagonal (Ports and Adapters)**
    └── resource/    → Endpoints HTTP
 ```
 
-## 🚀 Tecnologias
+## Tecnologias
 
-- **Java 17+**
-- **Quarkus 3.x** - Framework supersônico
-- **Hibernate/JPA** - ORM
-- **H2 Database** - Banco de dados em arquivo
-- **Flyway** - Migração de banco
-- **RESTEasy** - API REST
+- Java 17+
+- Quarkus 3.x
+- Hibernate/JPA
+- H2 Database
+- Flyway
+- REST (Quarkus REST)
+- Nginx (camada de infraestrutura)
+- Docker Compose (orquestracao local)
 
-- ## 📦 Pré-requisitos
+## Pre-requisitos
 
-- **Java 17** ou superior
-- **Maven 3.8+** (ou use o wrapper `mvnw`)
+Para desenvolvimento da API (modo dev):
 
-## ⚙️ Como Executar
+- Java 17 ou superior
+- Maven 3.8+ (ou usar `./mvnw`)
 
-### 1️⃣ Modo Desenvolvimento (Hot Reload)
+Para camada de infraestrutura (Nginx + API):
+
+- Docker
+- Docker Compose
+
+## Como Executar a API em Desenvolvimento (sem Nginx)
 
 ```bash
 ./mvnw quarkus:dev
 ```
 
-A aplicação estará disponível em: http://localhost:8080
+Aplicação disponivel em `http://localhost:8080`.
 
-### 📚 API Endpoints
+## API Endpoints (projeto atual)
 
-## Transações
+Observação: no projeto atual os endpoints estão em `/api/v1/transactions`.
+
+### Criar transacao
+
+```http
+POST /api/v1/transactions
+Content-Type: application/json
+```
+
+Exemplo de body:
 
 ```json
-POST /transactions
-Content-Type: application/json
-
 {
-  "accountId": 1,
-  "categoryId": 1,
+  "accountId": "22222222-2222-2222-2222-222222222222",
+  "categoryId": "44444444-4444-4444-4444-444444444444",
   "type": "EXPENSE",
   "amount": 150.00,
-  "description": "Compra supermercado",
-  "transactionDate": "2024-01-15"
+  "date": "2026-03-01",
+  "description": "Compra supermercado"
 }
 ```
 
-## Listar Transações
+### Listar transacoes do mes
 
-```json
-GET /transactions?startDate=2024-01-01&endDate=2024-01-31
+```http
+GET /api/v1/transactions?month=2026-03
 ```
 
+## Banco de Dados
 
-### 💾 Banco de Dados
+Modo dev (rodando `quarkus:dev`):
 
-O projeto utiliza H2 Database em arquivo persistente:
+- H2 em arquivo
+- JDBC URL: `jdbc:h2:file:./data/finances;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH`
+- Console H2 (dev): `http://localhost:8080/h2`
 
-- Arquivo: finances.mv.db
-- Console H2: http://localhost:8080/h2-console (em dev mode)
-- JDBC URL: jdbc:h2:file:./data/finances
-- Usuário: sa
-- Senha: (vazia)
+Modo Docker (API no compose):
 
-## Migrações Flyway
+- H2 em memoria (configurado via `docker-compose.yml`)
 
-As migrações SQL estão em migration:
+## Migracoes Flyway
 
-- V1__init.sql - Schema inicial
-- V2__seed_dev.sql - Dados de desenvolvimento
+As migracoes SQL ficam em `src/main/resources/db/migration`:
+
+- `V1__init.sql` - schema inicial
+- `V2__seed_dev.sql` - dados de desenvolvimento
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+---
+
+## Versão 2 -> Camada Nginx + Docker (trabalho de infraestrutura)
+
+Arquitetura usada nesta etapa:
+
+```text
+Cliente -> Nginx (porta 80) -> API Quarkus (porta 8080 interna)
+```
+
+### Arquivos importantes
+
+- `docker-compose.yml`: sobe API + Nginx
+- `nginx/nginx.conf`: configuracao principal do Nginx
+- `nginx/errors/404.html`: pagina customizada para 404
+- `nginx/errors/50x.html`: pagina customizada para 502/503/504
+- `logs/nginx/access.log`: log gerado em runtime
+- `postman/API + Nginx (CaixaVerso).postman_collection.json`: colecao pronta com testes
+
+### docker-compose (resumo)
+
+Servico `app`:
+
+- monta a API
+- expoe `8080` apenas para rede interna Docker
+
+Servico `nginx`:
+
+- publica porta `80` no host
+- usa `nginx.conf`
+- grava logs em `logs/nginx`
+
+## nginx.conf (o que cada bloco faz)
+
+Bloco `http`:
+
+- `log_format` + `access_log`: log estruturado
+- `limit_req_zone rate=5r/s`: limite por IP
+- `limit_req_status 429`: excedeu limite, retorna 429
+- `proxy_cache_path`: cache de GET
+- `gzip on` + `gzip_types`: compressao para JSON e texto
+
+Bloco `server`:
+
+- `listen 80`
+- `client_max_body_size 1m` (retorna 413 se exceder)
+- `add_header ...`: headers de seguranca
+- `error_page 404 ...` e `error_page 502 503 504 ...`
+
+Bloco `location /`:
+
+- aplica rate limit com burst 10
+- encaminha headers de proxy para API
+- aplica cache GET por 10s
+- `X-Cache-Status`: MISS/HIT/BYPASS
+- `proxy_pass http://app:8080`
+
+## Como subir API + Nginx
+
+1. Build da API:
+
+```bash
+./mvnw clean package -DskipTests
+```
+
+2. Subir ambiente:
+
+```bash
+docker compose up --build -d
+```
+
+3. Ver containers:
+
+```bash
+docker compose ps
+```
+
+4. Teste rapido via Nginx:
+
+```bash
+curl -i "http://localhost/api/v1/transactions?month=2026-03"
+```
+
+## Testes no Postman
+
+### Importar
+
+1. Importe `postman/API + Nginx (CaixaVerso).postman_collection.json`
+
+### Ordem sugerida
+
+1. `Inserir Transação Entrada`
+2. `Inserir Transação Saída`
+3. `01 - Reverse proxy (200)`
+4. `02 - Security headers`
+5. `03 - Gzip`
+6. `04 - Payload > 1MB (413)`
+7. `05 - Cache sem Authorization (1)`
+8. `06 - Cache sem Authorization (2)`
+9. `07 - Cache com Authorization (BYPASS)`
+10. `08 - Custom 404`
+11. `09 - Rate limit (Runner)`
+12. `10 - Custom 50x (parar app antes)`
+
+### Detalhes
+
+`09 - Rate limit (Runner)`:
+
+- rodar no Collection Runner com 25 iteracoes
+- a validacao espera pelo menos um status 429
+
+`10 - Custom 50x (parar app antes)`:
+
+- antes: `docker compose stop app`
+- depois: `docker compose start app`
+- esperado: 502 (ou 503/504) com pagina HTML customizada
+
+## Evidencias
+
+Log estruturado:
+
+```bash
+tail -n 20 logs/nginx/access.log
+```
+
+Comprovar que a API nao esta publica direto na 8080 do host:
+
+```bash
+curl -i "http://localhost:8080/api/v1/transactions?month=2026-03"
+```
+
+Encerrar ambiente:
+
+```bash
+docker compose down
+```
