@@ -1,9 +1,19 @@
 services:
-  app:
+  app1:
     build:
       context: .
       dockerfile: src/main/docker/Dockerfile.jvm
-    container_name: finances-app
+    container_name: finances-app1
+    environment:
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:h2:mem:finances;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    expose:
+      - "8080"
+
+  app2:
+    build:
+      context: .
+      dockerfile: src/main/docker/Dockerfile.jvm
+    container_name: finances-app2
     environment:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:h2:mem:finances;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     expose:
@@ -13,7 +23,8 @@ services:
     image: nginx:1.27-alpine
     container_name: finances-nginx
     depends_on:
-      - app
+      - app1
+      - app2
     ports:
       - "80:80"
     volumes:
