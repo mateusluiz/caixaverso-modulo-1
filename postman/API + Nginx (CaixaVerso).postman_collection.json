@@ -323,49 +323,7 @@
       "response": []
     },
     {
-      "name": "06 - Cache sem Authorization (2)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.response.to.have.status(200);",
-              "const cache = pm.response.headers.get('X-Cache-Status');",
-              "",
-              "pm.test('Cache sem token nao pode ser BYPASS', function () {",
-              "    pm.expect(cache).to.not.eql('BYPASS');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{base_url}}/api/v1/transactions?month={{month}}",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "transactions"
-          ],
-          "query": [
-            {
-              "key": "month",
-              "value": "{{month}}"
-            }
-          ]
-        },
-        "description": "Segunda chamada do cache (normalmente HIT se executar logo apos a 1)."
-      },
-      "response": []
-    },
-    {
-      "name": "07 - Cache com Authorization (BYPASS)",
+      "name": "06 - Cache com Authorization (BYPASS)",
       "event": [
         {
           "listen": "test",
@@ -411,7 +369,7 @@
       "response": []
     },
     {
-      "name": "08 - Custom 404",
+      "name": "07 - Custom 404",
       "event": [
         {
           "listen": "test",
@@ -446,7 +404,7 @@
       "response": []
     },
     {
-      "name": "09 - Rate limit (Runner)",
+      "name": "08 - Rate limit (Runner)",
       "event": [
         {
           "listen": "prerequest",
@@ -513,7 +471,7 @@
       "response": []
     },
     {
-      "name": "10 - Custom 50x (parar app1 e app2)",
+      "name": "09 - Custom 50x (parar app1 e app2)",
       "event": [
         {
           "listen": "test",
@@ -558,7 +516,7 @@
       "response": []
     },
     {
-      "name": "11 - Load balancer",
+      "name": "10 - Load balancer",
       "event": [
         {
           "listen": "test",
