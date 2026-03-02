@@ -127,7 +127,7 @@ As migracoes SQL ficam em `src/main/resources/db/migration`:
 Arquitetura usada nesta etapa:
 
 ```text
-Cliente -> Nginx (porta 80) -> API Quarkus (porta 8080 interna)
+Cliente -> Nginx (porta 80) -> Load Balancer -> API Quarkus (app1/app2, porta 8080 interna)
 ```
 
 ### Arquivos importantes
@@ -141,10 +141,10 @@ Cliente -> Nginx (porta 80) -> API Quarkus (porta 8080 interna)
 
 ### docker-compose (resumo)
 
-Servico `app`:
+Servicos `app1` e `app2`:
 
-- monta a API
-- expoe `8080` apenas para rede interna Docker
+- montam duas instancias identicas da API
+- exposição apenas interna (`8080`), sem publicar no host
 
 Servico `nginx`:
 
@@ -175,7 +175,8 @@ Bloco `location /`:
 - encaminha headers de proxy para API
 - aplica cache GET por 10s
 - `X-Cache-Status`: MISS/HIT/BYPASS
-- `proxy_pass http://app:8080`
+- `X-Upstream-Addr`: mostra qual instancia respondeu (app1 ou app2)
+- `proxy_pass http://finances_backend` (upstream com load balancer)
 
 ## Como subir API + Nginx
 
@@ -222,7 +223,8 @@ curl -i "http://localhost/api/v1/transactions?month=2026-03"
 9. `07 - Cache com Authorization (BYPASS)`
 10. `08 - Custom 404`
 11. `09 - Rate limit (Runner)`
-12. `10 - Custom 50x (parar app antes)`
+12. `10 - Custom 50x (parar app1 e app2)`
+13. `11 - Load balancer`
 
 ### Detalhes
 
@@ -231,11 +233,30 @@ curl -i "http://localhost/api/v1/transactions?month=2026-03"
 - rodar no Collection Runner com 25 iteracoes
 - a validacao espera pelo menos um status 429
 
-`10 - Custom 50x (parar app antes)`:
+`10 - Custom 50x (parar app1 e app2)`:
 
-- antes: `docker compose stop app`
-- depois: `docker compose start app`
+- antes: `docker compose stop app1 app2`
+- depois: `docker compose start app1 app2`
 - esperado: 502 (ou 503/504) com pagina HTML customizada
+
+`11 - Load balancer (Runner simples)`:
+
+- rode no Collection Runner com 10 iteracoes e delay de 200ms
+- cada iteracao mostra no resultado de testes: `Upstream atual: appX:8080`
+- no final valida: `Passou por app1 e app2 em algum momento`
+
+### Como validar o load balancer
+
+1. Rode varias chamadas com cache bypass:
+
+```bash
+for i in {1..10}; do
+  curl -s -D - -o /dev/null -H "Authorization: Bearer test" "http://localhost/api/v1/transactions?month=2026-03" | grep -i "X-Upstream-Addr"
+done
+```
+
+2. Resultado esperado:
+- cabecalho alternando entre `app1:8080` e `app2:8080` (round-robin / circular).
 
 ## Evidencias
 

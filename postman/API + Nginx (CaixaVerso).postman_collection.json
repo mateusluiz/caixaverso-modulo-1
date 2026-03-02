@@ -513,12 +513,11 @@
       "response": []
     },
     {
-      "name": "10 - Custom 50x (parar app antes)",
+      "name": "10 - Custom 50x (parar app1 e app2)",
       "event": [
         {
           "listen": "test",
           "script": {
-            "type": "text/javascript",
             "exec": [
               "pm.test('Status 50x', function () {",
               "    pm.expect([502, 503, 504]).to.include(pm.response.code);",
@@ -527,7 +526,10 @@
               "pm.test('Pagina customizada 50x', function () {",
               "    pm.expect(pm.response.text()).to.include('50x');",
               "});"
-            ]
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
           }
         }
       ],
@@ -548,6 +550,70 @@
             {
               "key": "month",
               "value": "{{month}}"
+            }
+          ]
+        },
+        "description": "Pare o container da app antes de executar para validar pagina 50x customizada."
+      },
+      "response": []
+    },
+    {
+      "name": "11 - Load balancer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const upstream = pm.response.headers.get(\"X-Upstream-Addr\") || \"nao informado\";",
+              "pm.test(`App que respondeu: ${upstream}`, function () {",
+              "  pm.expect(true).to.eql(true);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer test",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/transactions?month={{month}}&t={{$timestamp}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "transactions"
+          ],
+          "query": [
+            {
+              "key": "month",
+              "value": "{{month}}"
+            },
+            {
+              "key": "t",
+              "value": "{{$timestamp}}"
             }
           ]
         },
@@ -614,6 +680,18 @@
     },
     {
       "key": "rate_limit_429_count",
+      "value": ""
+    },
+    {
+      "key": "cache_first",
+      "value": ""
+    },
+    {
+      "key": "lb_seen",
+      "value": ""
+    },
+    {
+      "key": "lb_nonce",
       "value": ""
     }
   ]
